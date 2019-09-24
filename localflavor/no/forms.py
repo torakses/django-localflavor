@@ -196,8 +196,9 @@ class NOOrganisationNumberField(RegexField):
 
     default_error_messages = {'invalid': _("Please enter a valid Norwegian organisation number")}
 
-    def __init__(self, *args, **kwargs):
-        kwargs['regex'] = re.compile(r'^(NO )?(\d{3}) ?(\d{3}) ? (\d{3})( MVA)?$', re.IGNORECASE)
+    def __init__(self, max_length=18, min_length=9, *args, **kwargs):
+        regex = re.compile(r'^(NO )?(\d{3}) ?(\d{3}) ? (\d{3})( MVA)?$', re.IGNORECASE)
+        super(NOOrganisationNumberField, self).__init__(regex, max_length, min_length, *args, **kwargs)
 
     def to_python(self, value):
         match = self.regex.match(value)
