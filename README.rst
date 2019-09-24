@@ -1,3 +1,9 @@
+========================
+Extra local localflavour
+========================
+
+In this repository i have committed one tiny fix to the Norwegian component, by making it possible to store and validate Norwegian organisation numbers.
+
 ==================
 django-localflavor
 ==================
