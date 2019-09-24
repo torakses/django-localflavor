@@ -190,14 +190,18 @@ class NOPhoneNumberField(RegexField, DeprecatedPhoneNumberFormFieldMixin):
 
 class NOOrganisationNumberField(RegexField):
     """
-    Validates the input as a Norwegian "organisasjonsnummer", which is a 9 digit number
-    with a checksum using modulus 11.
+    Validates the input of a Norwegian "organisasjonsnummer", which is a 9 digit number
+    with the last digit being a checksum using the modulus 11 control digit algorithm.
+
+    documented (in Norwegian) at:
+        https://no.wikipedia.org/wiki/MOD11
+    
     """
 
     default_error_messages = {'invalid': _("Please enter a valid Norwegian organisation number")}
 
     def __init__(self, max_length=18, min_length=9, *args, **kwargs):
-        regex = re.compile(r'^(NO )?(\d{3}) ?(\d{3}) ? (\d{3})( MVA)?$', re.IGNORECASE)
+        regex = re.compile(r'^(NO )?(\d{3}) ?(\d{3}) ?(\d{3})( MVA)?$', re.IGNORECASE)
         super(NOOrganisationNumberField, self).__init__(regex, max_length, min_length, *args, **kwargs)
 
     def to_python(self, value):
@@ -213,13 +217,22 @@ class NOOrganisationNumberField(RegexField):
         if not value and not self.required:
             return value
         number = ''.join(self.regex.match(value).groups()[1:4])
-        checksum = int(number[-1])
+        # Get a hold of the last digit as this is a checkdigit
+        checkdigit = int(number[-1])
+        #get the rest of the digits.
         digits = [int(x) for x in list(number[:8])]
-        weights = [2, 3, 4, 5, 6, 7, 2, 3]
+
+        # weigh down each digit, then get the sum
+        weights = [3, 2, 7, 6, 5, 4, 3, 2]
         result = sum(w * (int(x)) for w, x in zip(weights, digits))
+
+        # mod11 the result
         remainder = result % 11
-        if remainder == 11:
-            remainder = 0
-        if remainder == 10 or remainder != checksum:
+
+        #then make sure we dont have any 11s by making those instances 0
+        checksum = 0 if remainder is 0 else 11 - remainder
+
+        # if the checksum is wrong raise a validationerror
+        if checksum != checkdigit:
             raise ValidationError(self.default_error_messages['invalid'], code='invalid')
         return value
